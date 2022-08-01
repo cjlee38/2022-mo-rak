@@ -133,7 +133,7 @@ public class AppointmentAcceptanceTest extends AcceptanceTest {
         List<RecommendationResponse> recommendationResponses = toObjectList(response, RecommendationResponse.class);
 
         //then
-        assertThat(recommendationResponses).hasSize(2);
+        assertThat(recommendationResponses).hasSize(4);
     }
 
     private ExtractableResponse<Response> 약속잡기_가능_시간_추천_결과_조회를_요청한다(String location) {

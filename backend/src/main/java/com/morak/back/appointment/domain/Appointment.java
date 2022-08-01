@@ -106,8 +106,10 @@ public class Appointment extends BaseEntity {
     }
 
     public void validateAvailableTimeRange(LocalDateTime startDateTime, LocalDateTime endDateTime) {
-        this.datePeriod.validateAvailableDateRange(startDateTime.toLocalDate(), endDateTime.toLocalDate());
-        this.timePeriod.validateAvailableTimeRange(startDateTime.toLocalTime(), endDateTime.toLocalTime());
+        if (!this.timePeriod.getEndTime().equals(TimePeriod.ZERO_TIME)) {
+            this.datePeriod.validateAvailableDateRange(startDateTime.toLocalDate(), endDateTime.toLocalDate());
+            this.timePeriod.validateAvailableTimeRange(startDateTime.toLocalTime(), endDateTime.toLocalTime());
+        }
     }
 
     public void close(Member member) {

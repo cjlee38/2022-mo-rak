@@ -12,7 +12,8 @@ import lombok.NoArgsConstructor;
 @Embeddable
 public class TimePeriod {
 
-    private static final int MINUTES_UNIT = 30;
+    public static final LocalTime ZERO_TIME = LocalTime.of(0, 0);
+    public static final int MINUTES_UNIT = 30;
 
     @NotNull(message = "약속잡기 시작 시간은 null일 수 없습니다.")
     private LocalTime startTime;
@@ -21,8 +22,10 @@ public class TimePeriod {
     private LocalTime endTime;
 
     public TimePeriod(LocalTime startTime, LocalTime endTime) {
+        if (!endTime.equals(ZERO_TIME)) {
+            validateChronology(startTime, endTime);
+        }
         validateMinutes(startTime, endTime);
-        validateChronology(startTime, endTime);
         this.startTime = startTime;
         this.endTime = endTime;
     }
