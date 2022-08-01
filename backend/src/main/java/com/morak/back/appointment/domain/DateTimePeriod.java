@@ -32,6 +32,14 @@ public class DateTimePeriod {
         this.endDateTime = endDateTime;
     }
 
+    public DatePeriod toDatePeriod() {
+        return new DatePeriod(startDateTime.toLocalDate(), endDateTime.toLocalDate());
+    }
+
+    public TimePeriod toTimePeriod() {
+        return new TimePeriod(startDateTime.toLocalTime(), endDateTime.toLocalTime());
+    }
+
     private void validateChronology(LocalDateTime startDateTime, LocalDateTime endDateTime) {
         if (startDateTime.isAfter(endDateTime)) {
             throw new InvalidRequestException("약속잡기 마지막 시점은 시작 시점 이후여야 합니다.");

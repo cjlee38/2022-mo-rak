@@ -6,12 +6,7 @@ import static com.morak.back.SimpleRestAssured.get;
 import static com.morak.back.SimpleRestAssured.patch;
 import static com.morak.back.SimpleRestAssured.put;
 import static com.morak.back.SimpleRestAssured.toObjectList;
-import static com.morak.back.appointment.AppointmentFixture.모락_스터디_약속잡기_요청_데이터;
-import static com.morak.back.appointment.AppointmentFixture.모락_회식_약속잡기_요청_데이터;
-import static com.morak.back.appointment.AppointmentFixture.모락_회식_첫째날_4시반부터_5시_선택_요청_데이터;
-import static com.morak.back.appointment.AppointmentFixture.모락_회식_첫째날_4시부터_4시반_선택_요청_데이터;
-import static com.morak.back.appointment.AppointmentFixture.모락_회식_첫째날_5시반부터_6시_선택_요청_데이터;
-import static com.morak.back.appointment.AppointmentFixture.모락_회식_첫째날_5시부터_5시반_선택_요청_데이터;
+import static com.morak.back.appointment.AppointmentFixture.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.morak.back.AcceptanceTest;
@@ -110,6 +105,42 @@ public class AppointmentAcceptanceTest extends AcceptanceTest {
     }
 
     @Test
+    void 범위에서_벗어난_약속잡기_가능시간을_선택하면_BAD_REQUEST를_던진다() {
+        // given
+        String location = 약속잡기_생성을_요청한다(모락_회식_약속잡기_요청_데이터).header("Location");
+
+        // when
+        List<AvailableTimeRequest> requests = List.of(
+                모락_회식_첫째날_4시부터_4시반_선택_요청_데이터,
+                모락_회식_첫째날_4시반부터_5시_선택_요청_데이터,
+                모락_회식_첫째날_5시부터_5시반_선택_요청_데이터,
+                모락_회식_첫째날_11시_반부터_00시_선택_요청_데이터
+        );
+        ExtractableResponse<Response> response = 약속잡기_가능_시간_선택을_요청한다(location, requests);
+
+        // then
+        assertThat(response.statusCode()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+    }
+
+    @Test
+    void 약속잡기_가능시간을_재선택한다() {
+        // given
+        String location = 약속잡기_생성을_요청한다(모락_회식_약속잡기_요청_데이터).header("Location");
+
+        // when
+        List<AvailableTimeRequest> requests = List.of(
+                모락_회식_첫째날_4시부터_4시반_선택_요청_데이터,
+                모락_회식_첫째날_4시반부터_5시_선택_요청_데이터,
+                모락_회식_첫째날_5시부터_5시반_선택_요청_데이터
+        );
+        약속잡기_가능_시간_선택을_요청한다(location, requests);
+        ExtractableResponse<Response> response = 약속잡기_가능_시간_선택을_요청한다(location, requests);
+
+        // then
+        assertThat(response.statusCode()).isEqualTo(HttpStatus.OK.value());
+    }
+
+    @Test
     void 약속잡기_추천_결과를_조회한다() {
         //given
         String location = 약속잡기_생성을_요청한다(모락_회식_약속잡기_요청_데이터).header("Location");
@@ -133,7 +164,7 @@ public class AppointmentAcceptanceTest extends AcceptanceTest {
         List<RecommendationResponse> recommendationResponses = toObjectList(response, RecommendationResponse.class);
 
         //then
-        assertThat(recommendationResponses).hasSize(2);
+        assertThat(recommendationResponses).hasSize(4);
     }
 
     private ExtractableResponse<Response> 약속잡기_가능_시간_추천_결과_조회를_요청한다(String location) {

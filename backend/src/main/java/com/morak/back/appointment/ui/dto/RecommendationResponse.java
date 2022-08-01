@@ -1,9 +1,12 @@
 package com.morak.back.appointment.ui.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.morak.back.appointment.domain.RankRecommendation;
+import com.morak.back.auth.domain.Member;
 import com.morak.back.auth.ui.dto.MemberResponse;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,4 +28,21 @@ public class RecommendationResponse {
     private List<MemberResponse> availableMembers;
 
     private List<MemberResponse> unavailableMembers;
+
+    public static RecommendationResponse from(RankRecommendation rankRecommendation) {
+        return new RecommendationResponse(
+                rankRecommendation.getRank(),
+                rankRecommendation.getStartDateTime(),
+                rankRecommendation.getEndDateTime(),
+                toMemberResponses(rankRecommendation.getAvailableMembers()),
+                toMemberResponses(rankRecommendation.getUnavailableMembers())
+        );
+    }
+
+    private static List<MemberResponse> toMemberResponses(List<Member> members) {
+        return members
+                .stream()
+                .map(MemberResponse::from)
+                .collect(Collectors.toList());
+    }
 }

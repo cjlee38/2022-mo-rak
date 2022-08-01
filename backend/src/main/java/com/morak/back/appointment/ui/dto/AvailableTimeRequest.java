@@ -27,12 +27,11 @@ public class AvailableTimeRequest {
     }
 
     public AvailableTime toAvailableTime(Member member, Appointment appointment) {
-        AvailableTime build = AvailableTime.builder()
+        return AvailableTime.builder()
                 .member(member)
                 .appointment(appointment)
                 .startDateTime(this.start)
                 .endDateTime(this.end)
                 .build();
-        return build;
     }
 }

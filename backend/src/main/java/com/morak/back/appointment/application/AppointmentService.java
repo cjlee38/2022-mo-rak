@@ -1,9 +1,12 @@
 package com.morak.back.appointment.application;
 
 import com.morak.back.appointment.domain.Appointment;
+import com.morak.back.appointment.domain.AppointmentRecommender;
 import com.morak.back.appointment.domain.AppointmentRepository;
 import com.morak.back.appointment.domain.AvailableTime;
 import com.morak.back.appointment.domain.AvailableTimeRepository;
+import com.morak.back.appointment.domain.RankRecommendation;
+import com.morak.back.appointment.domain.RecommendationCell;
 import com.morak.back.appointment.exception.AppointmentNotFoundException;
 import com.morak.back.appointment.ui.dto.AppointmentAllResponse;
 import com.morak.back.appointment.ui.dto.AppointmentCreateRequest;
@@ -19,6 +22,7 @@ import com.morak.back.core.domain.CodeGenerator;
 import com.morak.back.core.domain.RandomCodeGenerator;
 import com.morak.back.core.exception.InvalidRequestException;
 import com.morak.back.team.domain.Team;
+import com.morak.back.team.domain.TeamMember;
 import com.morak.back.team.domain.TeamMemberRepository;
 import com.morak.back.team.domain.TeamRepository;
 import com.morak.back.team.exception.MismatchedTeamException;
@@ -86,6 +90,7 @@ public class AppointmentService {
         validateAppointmentStatus(appointment);
 
         availableTimeRepository.deleteAllByMemberIdAndAppointmentId(memberId, appointment.getId());
+        availableTimeRepository.flush();
 
         List<AvailableTime> availableTimes = requests.stream()
                 .map(request -> request.toAvailableTime(member, appointment))
@@ -102,7 +107,17 @@ public class AppointmentService {
 
         Appointment appointment = appointmentRepository.findByCode(appointmentCode)
                 .orElseThrow(() -> new AppointmentNotFoundException(appointmentCode));
-        return null;
+        List<Member> members = teamMemberRepository.findAllByTeamId(teamId)
+                .stream()
+                .map(TeamMember::getMember)
+                .collect(Collectors.toList());
+        AppointmentRecommender recommender = AppointmentRecommender.of(appointment, members);
+
+        List<AvailableTime> availableTimes = availableTimeRepository.findAllByAppointmentId(appointment.getId());
+        List<RankRecommendation> rankRecommendations = recommender.recommend(availableTimes);
+        return rankRecommendations.stream()
+                .map(RecommendationResponse::from)
+                .collect(Collectors.toList());
     }
 
     public void closeAppointment(String teamCode, Long memberId, String appointmentCode) {

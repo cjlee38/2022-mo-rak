@@ -30,11 +30,11 @@ public class AppointmentCreateRequest {
     private final LocalDate endDate;
 
     @NotNull
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm:ss")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "hh:mma", locale = "en_US")
     private final LocalTime startTime;
 
     @NotNull
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm:ss")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "hh:mma", locale = "en_US")
     private final LocalTime endTime;
 
     @NotNull
@@ -65,8 +65,8 @@ public class AppointmentCreateRequest {
                 .description(this.description)
                 .startDate(this.startDate)
                 .endDate(this.endDate)
-                .startTime(this.startTime)
-                .endTime(this.endTime)
+                .startTime(startTime)
+                .endTime(endTime)
                 .durationHours(durationHour)
                 .durationMinutes(durationMinute)
                 .code(code)

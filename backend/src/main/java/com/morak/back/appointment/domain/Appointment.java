@@ -89,7 +89,7 @@ public class Appointment extends BaseEntity {
         this.host = host;
         this.title = title;
         this.description = description;
-        this.datePeriod = new DatePeriod(startDate, endDate);
+        this.datePeriod = DatePeriod.of(startDate, endDate, endTime);
         this.timePeriod = new TimePeriod(startTime, endTime);
         this.durationMinutes = new DurationMinutes(durationHours, durationMinutes);
         this.status = OPEN;
@@ -105,9 +105,9 @@ public class Appointment extends BaseEntity {
         return this.durationMinutes.parseMinutes();
     }
 
-    public void validateAvailableTimeRange(LocalDateTime startDateTime, LocalDateTime endDateTime) {
-        this.datePeriod.validateAvailableDateRange(startDateTime.toLocalDate(), endDateTime.toLocalDate());
-        this.timePeriod.validateAvailableTimeRange(startDateTime.toLocalTime(), endDateTime.toLocalTime());
+    public void validateAvailableTimeRange(DateTimePeriod dateTimePeriod) {
+        this.datePeriod.validateAvailableDateRange(dateTimePeriod.toDatePeriod());
+        this.timePeriod.validateAvailableTimeRange(dateTimePeriod.toTimePeriod());
     }
 
     public void close(Member member) {

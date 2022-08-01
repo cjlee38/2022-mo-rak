@@ -17,6 +17,8 @@ import com.morak.back.appointment.ui.dto.AppointmentAllResponse;
 import com.morak.back.appointment.ui.dto.AppointmentCreateRequest;
 import com.morak.back.appointment.ui.dto.AppointmentResponse;
 import com.morak.back.appointment.ui.dto.AvailableTimeRequest;
+import com.morak.back.appointment.ui.dto.RecommendationResponse;
+import com.morak.back.auth.ui.dto.MemberResponse;
 import com.morak.back.poll.ui.ControllerTest;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -184,6 +186,27 @@ class AppointmentControllerTest extends ControllerTest {
     @Test
     void 약속잡기_추천_결과를_조회한다() throws Exception {
         // given
+
+        RecommendationResponse recommendationResponse1 = new RecommendationResponse(
+                1,
+                LocalDateTime.of(2022, 8, 6, 16, 0),
+                LocalDateTime.of(2022, 8, 6, 18, 30),
+                List.of(
+                        new MemberResponse(1L, "eden", "eden-profile.com"),
+                        new MemberResponse(2L, "ellie", "ellie-profile.com")
+                ),
+                List.of(new MemberResponse(5L, "albur", "albur-profile.com"))
+        );
+        RecommendationResponse recommendationResponse2 = new RecommendationResponse(
+                1,
+                LocalDateTime.of(2022, 8, 6, 17, 0),
+                LocalDateTime.of(2022, 8, 6, 19, 30),
+                List.of(new MemberResponse(1L, "eden", "eden-profile.com")),
+                List.of(
+                        new MemberResponse(5L, "albur", "albur-profile.com"),
+                        new MemberResponse(2L, "ellie", "ellie-profile.com")
+                )
+        );
         String path = "/api/groups/{groupCode}/appointments/{appointmentCode}/recommendation";
 
         // when

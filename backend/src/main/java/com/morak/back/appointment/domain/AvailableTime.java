@@ -42,10 +42,12 @@ public class AvailableTime extends BaseEntity {
     @Builder
     private AvailableTime(Long id, Appointment appointment, Member member,
                          LocalDateTime startDateTime, LocalDateTime endDateTime) {
-        appointment.validateAvailableTimeRange(startDateTime, endDateTime);
+        DateTimePeriod dateTimePeriod = new DateTimePeriod(startDateTime, endDateTime);
+        appointment.validateAvailableTimeRange(dateTimePeriod);
+
         this.id = id;
         this.appointment = appointment;
         this.member = member;
-        this.dateTimePeriod = new DateTimePeriod(startDateTime, endDateTime);
+        this.dateTimePeriod = dateTimePeriod;
     }
 }
