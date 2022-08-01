@@ -1,9 +1,12 @@
 package com.morak.back.appointment.domain;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.morak.back.core.exception.InvalidRequestException;
 import java.time.LocalTime;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -23,5 +26,16 @@ class TimePeriodTest {
         // when & then
         assertThatThrownBy(() -> new TimePeriod(LocalTime.of(10, 30), LocalTime.of(14, minutes)))
                 .isInstanceOf(InvalidRequestException.class);
+    }
+
+    @Test
+    void 약속잡기_마지막_시간이_자정일_경우_시간순_검증을_하지_않는다() {
+        // given
+        LocalTime midnight = LocalTime.of(0, 0);
+
+        // when & then
+        assertThatNoException().isThrownBy(
+                () -> new TimePeriod(LocalTime.of(0, 0), midnight)
+        );
     }
 }

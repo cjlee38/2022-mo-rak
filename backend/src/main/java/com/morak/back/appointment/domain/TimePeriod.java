@@ -22,12 +22,16 @@ public class TimePeriod {
     private LocalTime endTime;
 
     public TimePeriod(LocalTime startTime, LocalTime endTime) {
-        if (!endTime.equals(ZERO_TIME)) {
+        if (!isMidnight(endTime)) {
             validateChronology(startTime, endTime);
         }
         validateMinutes(startTime, endTime);
         this.startTime = startTime;
         this.endTime = endTime;
+    }
+
+    private boolean isMidnight(LocalTime endTime) {
+        return endTime.equals(ZERO_TIME);
     }
 
     public void validateAvailableTimeRange(LocalTime startTime, LocalTime endTime) {

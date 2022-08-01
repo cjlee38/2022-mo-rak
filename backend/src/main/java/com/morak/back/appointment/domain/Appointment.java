@@ -89,7 +89,7 @@ public class Appointment extends BaseEntity {
         this.host = host;
         this.title = title;
         this.description = description;
-        this.datePeriod = new DatePeriod(startDate, endDate);
+        this.datePeriod = DatePeriod.of(startDate, endDate, endTime);
         this.timePeriod = new TimePeriod(startTime, endTime);
         this.durationMinutes = new DurationMinutes(durationHours, durationMinutes);
         this.status = OPEN;
