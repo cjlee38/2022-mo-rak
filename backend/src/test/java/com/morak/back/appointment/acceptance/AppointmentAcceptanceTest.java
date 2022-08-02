@@ -6,7 +6,14 @@ import static com.morak.back.SimpleRestAssured.get;
 import static com.morak.back.SimpleRestAssured.patch;
 import static com.morak.back.SimpleRestAssured.put;
 import static com.morak.back.SimpleRestAssured.toObjectList;
-import static com.morak.back.appointment.AppointmentFixture.*;
+import static com.morak.back.appointment.AppointmentFixture.모락_회식_첫째날_11시_반부터_00시_선택_요청_데이터;
+import static com.morak.back.appointment.AppointmentFixture.모락_회식_첫째날_4시반부터_5시_선택_요청_데이터;
+import static com.morak.back.appointment.AppointmentFixture.모락_회식_첫째날_4시부터_4시반_선택_요청_데이터;
+import static com.morak.back.appointment.AppointmentFixture.모락_회식_첫째날_5시반부터_6시_선택_요청_데이터;
+import static com.morak.back.appointment.AppointmentFixture.모락_회식_첫째날_5시부터_5시반_선택_요청_데이터;
+import static com.morak.back.appointment.AppointmentFixture.범위_16_20_약속잡기_요청_데이터;
+import static com.morak.back.appointment.AppointmentFixture.범위_16_24_약속잡기_요청_데이터;
+import static com.morak.back.appointment.AppointmentFixture.범위_하루종일_약속잡기_요청_데이터;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.morak.back.AcceptanceTest;
@@ -19,10 +26,19 @@ import com.morak.back.appointment.ui.dto.RecommendationResponse;
 import com.morak.back.auth.application.TokenProvider;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
+import java.io.BufferedReader;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 
@@ -44,7 +60,7 @@ public class AppointmentAcceptanceTest extends AcceptanceTest {
     @Test
     void 약속잡기를_생성한다() {
         // when
-        ExtractableResponse<Response> response = 약속잡기_생성을_요청한다(모락_회식_약속잡기_요청_데이터);
+        ExtractableResponse<Response> response = 약속잡기_생성을_요청한다(범위_16_20_약속잡기_요청_데이터);
 
         // then
         Assertions.assertAll(
@@ -56,8 +72,8 @@ public class AppointmentAcceptanceTest extends AcceptanceTest {
     @Test
     void 약속잡기_목록을_조회한다() {
         // given
-        약속잡기_생성을_요청한다(모락_회식_약속잡기_요청_데이터);
-        약속잡기_생성을_요청한다(모락_스터디_약속잡기_요청_데이터);
+        약속잡기_생성을_요청한다(범위_16_20_약속잡기_요청_데이터);
+        약속잡기_생성을_요청한다(범위_16_24_약속잡기_요청_데이터);
 
         // when
         ExtractableResponse<Response> response = 약속잡기_목록_조회를_요청한다();
@@ -73,7 +89,7 @@ public class AppointmentAcceptanceTest extends AcceptanceTest {
     @Test
     void 약속잡기_단건을_조회한다() {
         // given
-        String location = 약속잡기_생성을_요청한다(모락_회식_약속잡기_요청_데이터).header("Location");
+        String location = 약속잡기_생성을_요청한다(범위_16_20_약속잡기_요청_데이터).header("Location");
 
         // when
         ExtractableResponse<Response> response = 약속잡기_단건_조회를_요청한다(location);
@@ -90,7 +106,7 @@ public class AppointmentAcceptanceTest extends AcceptanceTest {
     @Test
     void 약속잡기_가능시간을_선택한다() {
         // given
-        String location = 약속잡기_생성을_요청한다(모락_회식_약속잡기_요청_데이터).header("Location");
+        String location = 약속잡기_생성을_요청한다(범위_16_20_약속잡기_요청_데이터).header("Location");
 
         // when
         List<AvailableTimeRequest> requests = List.of(
@@ -104,18 +120,144 @@ public class AppointmentAcceptanceTest extends AcceptanceTest {
         assertThat(response.statusCode()).isEqualTo(HttpStatus.OK.value());
     }
 
-    @Test
-    void 범위에서_벗어난_약속잡기_가능시간을_선택하면_BAD_REQUEST를_던진다() {
+    @ParameterizedTest
+    @CsvSource({
+            "0, 0, 0, 30",
+            "15, 0, 15, 30",
+            "15, 30, 16, 0",
+            "20, 0, 20, 30",
+            "23, 30, 0, 0"
+    })
+    void 범위에서_벗어난_약속잡기_가능시간을_선택하면_BAD_REQUEST를_던진다(int startHour, int startMinute, int endHour, int endMinute) {
         // given
-        String location = 약속잡기_생성을_요청한다(모락_회식_약속잡기_요청_데이터).header("Location");
+        String location = 약속잡기_생성을_요청한다(범위_16_20_약속잡기_요청_데이터).header("Location"); // 16시~20시
+
+        AvailableTimeRequest availableTimeRequest = new AvailableTimeRequest(
+                LocalDateTime.of(LocalDate.now().plusDays(1), LocalTime.of(startHour, startMinute)),
+                LocalDateTime.of(LocalDate.now().plusDays(1), LocalTime.of(endHour, endMinute))
+        );
 
         // when
         List<AvailableTimeRequest> requests = List.of(
                 모락_회식_첫째날_4시부터_4시반_선택_요청_데이터,
                 모락_회식_첫째날_4시반부터_5시_선택_요청_데이터,
                 모락_회식_첫째날_5시부터_5시반_선택_요청_데이터,
-                모락_회식_첫째날_11시_반부터_00시_선택_요청_데이터
+                availableTimeRequest
         );
+        ExtractableResponse<Response> response = 약속잡기_가능_시간_선택을_요청한다(location, requests);
+
+        // then
+        assertThat(response.statusCode()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "1, 16, 0, 1, 16, 30",
+            "1, 23, 30, 2, 0, 0",
+            "2, 23, 30, 3, 0, 0",
+            "3, 23, 30, 4, 0, 0"
+    })
+    void 범위_16시부터_자정까지_속해있는_약속잡기_가능시간을_선택하면_OK를_준다(int startDate, int startHour, int startMinute, int endDate,
+                                                   int endHour, int endMinute) {
+        // given
+        String location = 약속잡기_생성을_요청한다(범위_16_24_약속잡기_요청_데이터).header("Location");
+
+        AvailableTimeRequest availableTimeRequest = new AvailableTimeRequest(
+                LocalDateTime.of(LocalDate.now().plusDays(startDate), LocalTime.of(startHour, startMinute)),
+                LocalDateTime.of(LocalDate.now().plusDays(endDate), LocalTime.of(endHour, endMinute))
+        );
+
+        // when
+        List<AvailableTimeRequest> requests = List.of(availableTimeRequest);
+        ExtractableResponse<Response> response = 약속잡기_가능_시간_선택을_요청한다(location, requests);
+
+        // then
+        assertThat(response.statusCode()).isEqualTo(HttpStatus.OK.value());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "1, 15, 30, 1, 16, 0",
+            "2, 0, 0, 2, 0, 30",
+            "2, 0, 0, 2, 0, 30",
+            "4, 0, 0, 4, 0, 30"
+    })
+    void 약속잡기가_16시부터_자정까지_선택_가능한_경우_범위를_벗어나면_BAD_REQUEST를_응답한다(int startDate, int startHour, int startMinute,
+                                                               int endDate, int endHour, int endMinute) {
+        // given
+        String location = 약속잡기_생성을_요청한다(범위_16_24_약속잡기_요청_데이터).header("Location");
+
+        AvailableTimeRequest availableTimeRequest = new AvailableTimeRequest(
+                LocalDateTime.of(LocalDate.now().plusDays(startDate), LocalTime.of(startHour, startMinute)),
+                LocalDateTime.of(LocalDate.now().plusDays(endDate), LocalTime.of(endHour, endMinute))
+        );
+
+        // when
+        List<AvailableTimeRequest> requests = List.of(availableTimeRequest);
+        ExtractableResponse<Response> response = 약속잡기_가능_시간_선택을_요청한다(location, requests);
+
+        // then
+        assertThat(response.statusCode()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+    }
+
+    private static List<Arguments> getAvailableTimeRequest() {
+        return List.of(
+                Arguments.of(모락_회식_첫째날_4시부터_4시반_선택_요청_데이터),
+                Arguments.of(모락_회식_첫째날_4시반부터_5시_선택_요청_데이터),
+                Arguments.of(모락_회식_첫째날_5시부터_5시반_선택_요청_데이터),
+                Arguments.of(모락_회식_첫째날_11시_반부터_00시_선택_요청_데이터),
+                Arguments.of(new AvailableTimeRequest(
+                        LocalDateTime.of(범위_하루종일_약속잡기_요청_데이터.getStartDate(), LocalTime.of(0, 0)),
+                        LocalDateTime.of(범위_하루종일_약속잡기_요청_데이터.getStartDate(), LocalTime.of(0, 30))
+                )),
+                Arguments.of(new AvailableTimeRequest(
+                        LocalDateTime.of(범위_하루종일_약속잡기_요청_데이터.getEndDate().minusDays(1), LocalTime.of(23, 30)),
+                        LocalDateTime.of(범위_하루종일_약속잡기_요청_데이터.getEndDate(), LocalTime.of(0, 0))
+                ))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("getAvailableTimeRequest")
+    void 범위가_하루종일일때_약속잡기_가능시간을_선택하면_OK를_준다(AvailableTimeRequest request) {
+        // given
+        String location = 약속잡기_생성을_요청한다(범위_하루종일_약속잡기_요청_데이터).header("Location");
+
+        // when
+        List<AvailableTimeRequest> requests = List.of(request);
+        ExtractableResponse<Response> response = 약속잡기_가능_시간_선택을_요청한다(location, requests);
+
+        // then
+        assertThat(response.statusCode()).isEqualTo(HttpStatus.OK.value());
+    }
+
+    private static List<Arguments> getUnavailableTimeRequest() {
+        return List.of(
+                Arguments.of(new AvailableTimeRequest(
+                        LocalDateTime.of(범위_하루종일_약속잡기_요청_데이터.getEndDate().plusDays(10), LocalTime.of(23, 30)),
+                        LocalDateTime.of(범위_하루종일_약속잡기_요청_데이터.getEndDate().plusDays(11), LocalTime.of(0, 0)))
+                ),
+                Arguments.of(new AvailableTimeRequest(
+                        LocalDateTime.of(범위_하루종일_약속잡기_요청_데이터.getStartDate().minusDays(1), LocalTime.of(23, 30)),
+                        LocalDateTime.of(범위_하루종일_약속잡기_요청_데이터.getStartDate(), LocalTime.of(0, 0))
+                )),
+                Arguments.of(new AvailableTimeRequest(
+                        LocalDateTime.of(범위_하루종일_약속잡기_요청_데이터.getEndDate().plusDays(1), LocalTime.of(0, 0)),
+                        LocalDateTime.of(범위_하루종일_약속잡기_요청_데이터.getEndDate().plusDays(1), LocalTime.of(0, 30))
+                ))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("getUnavailableTimeRequest")
+    void 범위가_하루종일일때_벗어나는_약속잡기_가능시간을_선택하면_BAD_REQUEST를_던진다() {
+        // given
+        String location = 약속잡기_생성을_요청한다(범위_하루종일_약속잡기_요청_데이터).header("Location");
+
+        // when
+        List<AvailableTimeRequest> requests = List.of(new AvailableTimeRequest(
+                LocalDateTime.of(범위_하루종일_약속잡기_요청_데이터.getEndDate().plusDays(10), LocalTime.of(23, 30)),
+                LocalDateTime.of(범위_하루종일_약속잡기_요청_데이터.getEndDate().plusDays(11), LocalTime.of(0, 0))));
         ExtractableResponse<Response> response = 약속잡기_가능_시간_선택을_요청한다(location, requests);
 
         // then
@@ -125,7 +267,7 @@ public class AppointmentAcceptanceTest extends AcceptanceTest {
     @Test
     void 약속잡기_가능시간을_재선택한다() {
         // given
-        String location = 약속잡기_생성을_요청한다(모락_회식_약속잡기_요청_데이터).header("Location");
+        String location = 약속잡기_생성을_요청한다(범위_16_20_약속잡기_요청_데이터).header("Location");
 
         // when
         List<AvailableTimeRequest> requests = List.of(
@@ -143,7 +285,7 @@ public class AppointmentAcceptanceTest extends AcceptanceTest {
     @Test
     void 약속잡기_추천_결과를_조회한다() {
         //given
-        String location = 약속잡기_생성을_요청한다(모락_회식_약속잡기_요청_데이터).header("Location");
+        String location = 약속잡기_생성을_요청한다(범위_16_20_약속잡기_요청_데이터).header("Location");
 
         List<AvailableTimeRequest> requests = List.of(
                 모락_회식_첫째날_4시부터_4시반_선택_요청_데이터,
@@ -179,7 +321,7 @@ public class AppointmentAcceptanceTest extends AcceptanceTest {
     @Test
     void 약속잡기를_마감한다() {
         //given
-        String location = 약속잡기_생성을_요청한다(모락_회식_약속잡기_요청_데이터).header("Location");
+        String location = 약속잡기_생성을_요청한다(범위_16_20_약속잡기_요청_데이터).header("Location");
 
         //when
         ExtractableResponse<Response> response = 약속잡기_마감을_요청한다(location);
@@ -191,7 +333,7 @@ public class AppointmentAcceptanceTest extends AcceptanceTest {
     @Test
     void 약속잡기를_삭제한다() {
         //given
-        String location = 약속잡기_생성을_요청한다(모락_회식_약속잡기_요청_데이터).header("Location");
+        String location = 약속잡기_생성을_요청한다(범위_16_20_약속잡기_요청_데이터).header("Location");
 
         //when
         ExtractableResponse<Response> response = 약속잡기_삭제를_요청한다(location);
